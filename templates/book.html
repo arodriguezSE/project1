@@ -23,8 +23,30 @@
       <dd class="col-sm-9">{{book.year}}</dd>
 
   </dl>
-  <a href="#" class="btn btn-primary mt-auto">Review this book</a>
+  <a href="{{book.isbn}}/review" class="btn btn-primary mt-auto">Review this book</a>
   </div>
+</div>
+
+
+<div>
+  <h5 class= "text-left mb-5 mt-5">Reviews </h5>
+</div>
+<div>
+
+{% for review in reviews%}
+<div class="card bg-light mb-3">
+  <!-- <h5 class="card-header">{{review.user_id }}</h5> -->
+  <!-- <h5 class="card-header ml-auto">{{review.rating }}</h5> -->
+  <div class="card-header d-flex flex-row font-weight-bold">
+    <span class=" mr-auto text-left">{{review.username }}</span>
+    <span class=" ml-auto text-right">{{review.rating }}</span>
+  </div>
+  <div class="card-body d-flex flex-column">
+    <dl class="row card-text p-2">
+      <p>{{review.review_text}}</p>
+  </div>
+</div>
+{%endfor%}
 </div>
 
 

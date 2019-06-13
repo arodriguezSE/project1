@@ -41,7 +41,8 @@ def book(isbn):
     if book is None:
         return render_template("error.html", message="No such book")
     else:
-        return render_template("book.html",book=book)
+        reviews = db.execute("SELECT * FROM reviews JOIN users ON reviews.user_id = users.id WHERE book_id = :book_id", {"book_id": book.isbn}).fetchall()
+        return render_template("book.html",book=book,reviews=reviews)
 
 @app.route("/register", methods=["GET","POST"])
 def register():
@@ -91,3 +92,22 @@ def login():
 def logout():
     session.clear()
     return redirect("/")
+
+@app.route("/<string:isbn>/review", methods=["GET","POST"])
+def review(isbn):
+    if request.method =="GET":
+        row = db.execute("SELECT title FROM books WHERE isbn = :isbn", {"isbn":isbn}).fetchone()
+        return(render_template("review.html",isbn=isbn,title=row.title))
+    else:
+        rating=request.form.get("rating")
+        text=request.form.get("text")
+        user = session.get("user_id")
+        reviewMade = db.execute("SELECT * FROM reviews WHERE user_id = :user_id AND book_id = :isbn", {"user_id":user, "isbn": isbn}).fetchone()
+        if reviewMade is None:
+            db.execute("INSERT INTO reviews (user_id, rating,review_text,book_id) VALUES (:user, :rating, :text, :isbn)",
+            {"user": user, "rating": rating, "text": text, "isbn": isbn})
+            db.commit()
+            return("ok")
+        else:
+
+            return("review already made")
