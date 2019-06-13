@@ -4,6 +4,7 @@ from flask import Flask, session,render_template,request,redirect
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from helpers import login_required
 
 app = Flask(__name__)
 
@@ -21,10 +22,26 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 
-@app.route("/")
+@app.route("/",methods=["GET","POST"])
+@login_required
 def index():
-    #return "Project 1: TODO"
-    return(render_template("index.html"))
+    if request.method =="GET":
+        return(render_template("index.html"))
+    else:
+        isbn=request.form.get("isbn")
+        author=request.form.get("author")
+        title=request.form.get("title")
+
+        matches = db.execute("SELECT * FROM books WHERE LOWER(author) LIKE LOWER(:author) AND LOWER(title) LIKE LOWER(:title) AND LOWER(isbn) LIKE LOWER(:isbn)", {"author": "%"+author+"%","title": "%"+title+"%","isbn": isbn+"%" }).fetchall()
+        #matches = db.execute("SELECT * FROM books WHERE isbn = :isbn", {"isbn": isbn}).fetchall()
+        return(render_template("matches.html", matches = matches,numMatches=len(matches)))
+@app.route("/<string:isbn>")
+def book(isbn):
+    book = db.execute("SELECT * FROM books WHERE LOWER(isbn) = LOWER(:isbn)", {"isbn": isbn }).fetchone()
+    if book is None:
+        return render_template("error.html", message="No such book")
+    else:
+        return render_template("book.html",book=book)
 
 @app.route("/register", methods=["GET","POST"])
 def register():
