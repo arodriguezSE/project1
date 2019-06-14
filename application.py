@@ -1,10 +1,12 @@
 import os
+import requests
 
-from flask import Flask, session,render_template,request,redirect
+from flask import Flask, session,render_template,request,redirect,url_for
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from helpers import login_required
+
 
 app = Flask(__name__)
 
@@ -42,7 +44,14 @@ def book(isbn):
         return render_template("error.html", message="No such book")
     else:
         reviews = db.execute("SELECT * FROM reviews JOIN users ON reviews.user_id = users.id WHERE book_id = :book_id", {"book_id": book.isbn}).fetchall()
-        return render_template("book.html",book=book,reviews=reviews)
+        res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "bz6TldmQRGULiQQtkASw", "isbns": book.isbn})
+        if res.status_code==200:
+            resJ=res.json()
+            rating = resJ["books"][0]["average_rating"]
+        else:
+            rating=None
+
+        return render_template("book.html",book=book,reviews=reviews,rating=rating)
 
 @app.route("/register", methods=["GET","POST"])
 def register():
@@ -107,7 +116,7 @@ def review(isbn):
             db.execute("INSERT INTO reviews (user_id, rating,review_text,book_id) VALUES (:user, :rating, :text, :isbn)",
             {"user": user, "rating": rating, "text": text, "isbn": isbn})
             db.commit()
-            return("ok")
+            url="/"+isbn
+            return redirect(url)
         else:
-
             return("review already made")
